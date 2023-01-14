@@ -1,7 +1,7 @@
 import pandas as pd
 import json
 
-from app.src.get_data.scrape_fpl import FPLScraper
+from app.src.get_data.connector_fpl import FPLScraper
 from app.src.get_data.connector_bet import BetAPIConnector
 from app.src.use_data.combine_bet_fpl import combine_bet_fpl
 

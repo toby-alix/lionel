@@ -1,0 +1,20 @@
+name: lionel-backend
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - flask-sqlalchemy
+  - pip
+  - plotly
+  - postgresql
+  - pip:
+    - apscheduler
+    - flask
+    - flask-wtf
+    - psycopg2
+    - pulp
+    - python-dotenv
+    - pandas
+    - numpy
+    - requests
+prefix: C:\Users\thowar1\Anaconda3\envs\lionel-backend

@@ -6,17 +6,14 @@ import os
 import requests
 from dotenv import dotenv_values
 
-ENV_VARS = dotenv_values()
-API_KEY = os.environ.get('API_KEY') or ENV_VARS['API_KEY']
 
-api_url = "https://api.the-odds-api.com/v4/sports/soccer_epl/odds/?apiKey=c7d79004e7018b5ef05080044a0f04ca&regions=uk&markets=h2h"
-
-# NB: GET for historical odds GET /v4/sports/{sport}/odds-history/?apiKey={apiKey}&regions={regions}&markets={markets}&date={date}
-# Date needs to be in timestamp format: 2021-10-18T12:00:00Z
 # Another potential API to use: https://www.programmableweb.com/api/premier-league-live-scores-rest-api-v20#:~:text=The%20Premier%20League%20Live%20Scores,result%20using%20an%20AI%20Deep
-
 ## AIrsenal scrapes understat: https://github.com/alan-turing-institute/AIrsenal/blob/main/airsenal/scraper/scrape_understat.py
 # Whether to use classes: https://medium.com/@senchooo/build-oop-program-with-scraping-feature-in-python-chapter-1-design-your-program-with-oop-aec82eb1d4b1
+
+
+ENV_VARS = dotenv_values()
+API_KEY = os.environ.get('API_KEY') or ENV_VARS['API_KEY']
 
 
 class BetAPIConnector():
@@ -100,8 +97,6 @@ class BetAPIConnector():
 
     @staticmethod
     def get_teams(game) -> dict:
-        # home = game['home_team']
-        # away = game['away_team']
         return {'home': game['home_team'], 'away': game['away_team']}
 
 
@@ -177,7 +172,6 @@ class BetAPIConnector():
         return df_games.replace({'home': name_map, 'away': name_map})
 
 
-    ## Can this be a decorator or something
     def run(self):
         self.get_future_response()
         games = []
@@ -198,170 +192,12 @@ class BetAPIConnector():
             games.append(game_dict)
         
         games = pd.DataFrame.from_dict(games)
+        games = BetAPIConnector._rename_teams(games)
     
         games['game_date'] = pd.to_datetime(games['game_date']).dt.date
         games['game_date'] = pd.to_datetime(games['game_date'])
-        
-        games = BetAPIConnector._rename_teams(games)
 
         return games
 
 
     
-
-"""
-A single game obj looks like this:
-
-{'id': '3c4512761cfd2e1782bb85271764ccaf',
- 'sport_key': 'soccer_epl',
- 'sport_title': 'EPL',
- 'commence_time': '2023-01-13T20:00:00Z',
- 'home_team': 'Aston Villa',
- 'away_team': 'Leeds United',
- 'bookmakers': [{'key': 'paddypower',
-   'title': 'Paddy Power',
-   'last_update': '2023-01-12T22:39:49Z',
-   'markets': [{'key': 'h2h',
-     'last_update': '2023-01-12T22:39:49Z',
-     'outcomes': [{'name': 'Aston Villa', 'price': 1.9},
-      {'name': 'Leeds United', 'price': 4.0},
-      {'name': 'Draw', 'price': 3.5}]}]},
-  {'key': 'virginbet',
-   'title': 'Virgin Bet',
-   'last_update': '2023-01-12T22:39:50Z',
-   'markets': [{'key': 'h2h',
-     'last_update': '2023-01-12T22:39:50Z',
-     'outcomes': [{'name': 'Aston Villa', 'price': 1.95},
-      {'name': 'Leeds United', 'price': 4.0},
-      {'name': 'Draw', 'price': 3.6}]}]},
-  {'key': 'livescorebet',
-   'title': 'LiveScore Bet',
-   'last_update': '2023-01-12T22:40:00Z',
-   'markets': [{'key': 'h2h',
-     'last_update': '2023-01-12T22:40:00Z',
-     'outcomes': [{'name': 'Aston Villa', 'price': 1.95},
-      {'name': 'Leeds United', 'price': 4.0},
-      {'name': 'Draw', 'price': 3.6}]}]},
-  {'key': 'betway',
-   'title': 'Betway',
-   'last_update': '2023-01-12T22:40:17Z',
-   'markets': [{'key': 'h2h',
-     'last_update': '2023-01-12T22:40:17Z',
-     'outcomes': [{'name': 'Aston Villa', 'price': 1.91},
-      {'name': 'Leeds United', 'price': 4.0},
-      {'name': 'Draw', 'price': 3.6}]}]},
-  {'key': 'sport888',
-   'title': '888sport',
-   'last_update': '2023-01-12T22:39:59Z',
-   'markets': [{'key': 'h2h',
-     'last_update': '2023-01-12T22:39:59Z',
-     'outcomes': [{'name': 'Aston Villa', 'price': 1.91},
-      {'name': 'Leeds United', 'price': 3.95},
-      {'name': 'Draw', 'price': 3.6}]}]},
-  {'key': 'williamhill',
-   'title': 'William Hill',
-   'last_update': '2023-01-12T22:39:59Z',
-   'markets': [{'key': 'h2h',
-     'last_update': '2023-01-12T22:39:59Z',
-     'outcomes': [{'name': 'Aston Villa', 'price': 1.95},
-      {'name': 'Leeds United', 'price': 3.9},
-      {'name': 'Draw', 'price': 3.5}]}]},
-  {'key': 'betvictor',
-   'title': 'Bet Victor',
-   'last_update': '2023-01-12T22:39:53Z',
-   'markets': [{'key': 'h2h',
-     'last_update': '2023-01-12T22:39:53Z',
-     'outcomes': [{'name': 'Aston Villa', 'price': 1.9},
-      {'name': 'Leeds United', 'price': 3.9},
-      {'name': 'Draw', 'price': 3.5}]}]},
-  {'key': 'skybet',
-   'title': 'Sky Bet',
-   'last_update': '2023-01-12T22:38:22Z',
-   'markets': [{'key': 'h2h',
-     'last_update': '2023-01-12T22:38:22Z',
-     'outcomes': [{'name': 'Aston Villa', 'price': 1.91},
-      {'name': 'Leeds United', 'price': 3.8},
-      {'name': 'Draw', 'price': 3.6}]}]},
-  {'key': 'betfair',
-   'title': 'Betfair',
-   'last_update': '2023-01-12T22:43:21Z',
-   'markets': [{'key': 'h2h',
-     'last_update': '2023-01-12T22:43:21Z',
-     'outcomes': [{'name': 'Aston Villa', 'price': 1.99},
-      {'name': 'Leeds United', 'price': 4.3},
-      {'name': 'Draw', 'price': 3.7}]},
-    {'key': 'h2h_lay',
-     'last_update': '2023-01-12T22:43:21Z',
-     'outcomes': [{'name': 'Aston Villa', 'price': 2.0},
-      {'name': 'Leeds United', 'price': 4.4},
-      {'name': 'Draw', 'price': 3.75}]}]},
-  {'key': 'boylesports',
-   'title': 'BoyleSports',
-   'last_update': '2023-01-12T22:39:49Z',
-   'markets': [{'key': 'h2h',
-     'last_update': '2023-01-12T22:39:49Z',
-     'outcomes': [{'name': 'Aston Villa', 'price': 1.87},
-      {'name': 'Leeds United', 'price': 4.0},
-      {'name': 'Draw', 'price': 3.5}]}]},
-  {'key': 'mrgreen',
-   'title': 'Mr Green',
-   'last_update': '2023-01-12T22:39:49Z',
-   'markets': [{'key': 'h2h',
-     'last_update': '2023-01-12T22:39:49Z',
-     'outcomes': [{'name': 'Aston Villa', 'price': 1.83},
-      {'name': 'Leeds United', 'price': 4.25},
-      {'name': 'Draw', 'price': 3.75}]}]},
-  {'key': 'casumo',
-   'title': 'Casumo',
-   'last_update': '2023-01-12T22:39:49Z',
-   'markets': [{'key': 'h2h',
-     'last_update': '2023-01-12T22:39:49Z',
-     'outcomes': [{'name': 'Aston Villa', 'price': 1.8},
-      {'name': 'Leeds United', 'price': 4.1},
-      {'name': 'Draw', 'price': 3.65}]}]},
-  {'key': 'unibet_uk',
-   'title': 'Unibet',
-   'last_update': '2023-01-12T22:40:00Z',
-   'markets': [{'key': 'h2h',
-     'last_update': '2023-01-12T22:40:00Z',
-     'outcomes': [{'name': 'Aston Villa', 'price': 1.85},
-      {'name': 'Leeds United', 'price': 4.25},
-      {'name': 'Draw', 'price': 3.75}]}]},
-  {'key': 'leovegas',
-   'title': 'LeoVegas',
-   'last_update': '2023-01-12T22:39:24Z',
-   'markets': [{'key': 'h2h',
-     'last_update': '2023-01-12T22:39:24Z',
-     'outcomes': [{'name': 'Aston Villa', 'price': 1.82},
-      {'name': 'Leeds United', 'price': 4.2},
-      {'name': 'Draw', 'price': 3.7}]}]},
-  {'key': 'coral',
-   'title': 'Coral',
-   'last_update': '2023-01-12T22:39:49Z',
-   'markets': [{'key': 'h2h',
-     'last_update': '2023-01-12T22:39:49Z',
-     'outcomes': [{'name': 'Aston Villa', 'price': 1.91},
-      {'name': 'Leeds United', 'price': 3.9},
-      {'name': 'Draw', 'price': 3.6}]}]},
-  {'key': 'ladbrokes',
-   'title': 'Ladbrokes',
-   'last_update': '2023-01-12T22:38:21Z',
-   'markets': [{'key': 'h2h',
-     'last_update': '2023-01-12T22:38:21Z',
-     'outcomes': [{'name': 'Aston Villa', 'price': 1.91},
-      {'name': 'Leeds United', 'price': 3.8},
-      {'name': 'Draw', 'price': 3.5}]}]},
-  {'key': 'matchbook',
-   'title': 'Matchbook',
-   'last_update': '2023-01-12T22:40:00Z',
-   'markets': [{'key': 'h2h',
-     'last_update': '2023-01-12T22:40:00Z',
-     'outcomes': [{'name': 'Aston Villa', 'price': 1.99},
-      {'name': 'Leeds United', 'price': 4.3},
-      {'name': 'Draw', 'price': 3.7}]},
-    {'key': 'h2h_lay',
-     'last_update': '2023-01-12T22:40:00Z',
-     'outcomes': [{'name': 'Aston Villa', 'price': 2.0},
-      {'name': 'Leeds United', 'price': 4.4},
-      {'name': 'Draw', 'price': 3.75}]}]}]}
-"""

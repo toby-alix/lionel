@@ -1,7 +1,8 @@
 import numpy as np
-from pulp import LpVariable, LpProblem, lpSum, LpMaximize
 import datetime as dt
-from app.src.get_data.connector import PostgresConnector
+from pulp import LpVariable, LpProblem, lpSum, LpMaximize
+
+from app.src.get_data.connector_sql import PostgresConnector
 
 class Team:
 
@@ -63,6 +64,7 @@ class Team:
         df['next_gw'] = next_gw
         return df 
 
+
     @staticmethod
     def _sum_player_stats(current_gw, _df_shaped_fixtures, df_collapsed_players):
             
@@ -76,6 +78,7 @@ class Team:
         df_collapsed_players = df_collapsed_players.rename(columns={'team':'team_name'})
         
         return df_collapsed_players
+
 
     @staticmethod
     def _shape_home_away_fixtures(df_players, df_odds):
@@ -152,6 +155,7 @@ class Team:
         df_next_game['surname'] = df_next_game.name.apply(lambda x: x.split()[-1])
         
         return df_next_game
+
 
     @staticmethod
     def _pick_xv(player_df, maximisation_var="value_fixture", BUDGET=1000, testing=False):
@@ -268,16 +272,6 @@ class Team:
 
         self.first_xi = team
         
-
-class TeamPointsChecker:
-    def __init__(self, connector: PostgresConnector):
-        self.connector = connector
-
-    
-    def check_points(self, gameweek, season):
-        team = self.connector.get_team(gameweek, season)
-        team = team[team.first_xi == 1]
-        pass
 
 
     
