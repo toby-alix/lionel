@@ -11,7 +11,8 @@ class Team:
             season, 
             next_gameweek,  # adjusted from current_gameweek to next_gameweek
             df_next_game=pd.DataFrame(), 
-            initial_xi:Type['Team']=None, # The previous team for updates to be made to
+            initial_team:Type['Team']=None, # The previous team for updates to be made to
+            n_transfers=None,
             odds_weight_def=0.6, 
             odds_weight_fwd=0.4,
             optimisation_obj=DumbOptimiser,
@@ -23,13 +24,14 @@ class Team:
         self.gameweek = next_gameweek
         self.processor = BetFPLCombiner(season, next_gameweek, odds_weight_def, odds_weight_fwd) ## TODO: Team should pull from DB not straight from the scraper.
         self.selector = optimisation_obj
-       
+
         self.df_next_game = df_next_game
-        self.initial_xi = initial_xi  # Could be another object of the same class? That would be v. nice
+        self.initial_team = initial_team  # Could be another object of the same class? That would be v. nice
+        self.n_transfers = n_transfers
         self.first_xi = pd.DataFrame()
         self.first_xv = pd.DataFrame()
 
-        self.budget = budget
+        self.budget = budget # TODO: Create class
         self.value = None
 
         self.selected = False
@@ -42,7 +44,13 @@ class Team:
     @property
     def selector(self):
         if isinstance(self._selector, type):
-            self._selector = self._selector(self.df_next_game, self.season, budget=self.budget, testing=self.testing)
+            self._selector = self._selector(
+                player_df=self.df_next_game, 
+                season=self.season, 
+                budget=self.budget, 
+                initial_team=self.initial_team, 
+                testing=self.testing,
+            )
         return self._selector
     
     @selector.setter
@@ -71,6 +79,7 @@ class Team:
             self._value = value
         return self._value
     
+    
     @value.setter
     def value(self, val):
         self._value = val
@@ -81,7 +90,7 @@ class Team:
     
     @budget.setter
     def budget(self, val):
-        if self.initial_xi is None:
+        if self.initial_team is None:
             self._budget = val
         else:
             remaining = self._get_deficit_budget()

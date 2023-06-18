@@ -72,7 +72,7 @@ class FutureBetScraper(BetScraper):
             + f"{BetScraper.SPORT}/odds/?apiKey={BetScraper.API_KEY}&"
             f"regions={BetScraper.REGIONS}&markets={BetScraper.MARKETS}"
         )
-    
+
 
 class HistoricalBetScraper(BetScraper):
     def __init__(self, date):

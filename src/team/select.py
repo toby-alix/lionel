@@ -22,7 +22,7 @@ class Optimiser(metaclass=ABCMeta):
         }
     }
 
-    def __init__(self, player_df, season, budget, testing=False):
+    def __init__(self, player_df, season, budget, initial_team=None, testing=False):
         self.player_df=player_df.fillna(0).reset_index()
         self.teams = self.player_df.team_name.to_list()
         self.positions = self.player_df.position.to_list()
@@ -32,20 +32,33 @@ class Optimiser(metaclass=ABCMeta):
 
         self.budget = budget
         self.testing = testing
+        self.initial_team=initial_team
 
         self.first_xv = pd.DataFrame()
         self.first_xi = pd.DataFrame()
         
+    @property
+    def intial_team(self):
+        return self._initial_team
+    
+    @intial_team.setter
+    def initial_team(self, val):
+        self._initial_team = val
+
     @abstractmethod
     def pick_xi(self):
         """Return df of all players with first_xi == 1 for those that are picked"""
         pass
 
+    @abstractmethod
+    def suggest_transfers(self, n_transfers):
+        pass
+
 
 class DumbOptimiser(Optimiser):
    
-    def __init__(self, player_df, season, budget=1000, testing=False, max_var="value_fixture"):
-        Optimiser.__init__(self, player_df, season, budget, testing)
+    def __init__(self, player_df, season, budget=1000, initial_team=None, testing=False, max_var="value_fixture"):
+        Optimiser.__init__(self, player_df, season, budget, initial_team, testing)
         self.max_var = max_var
 
     @property
@@ -100,7 +113,6 @@ class DumbOptimiser(Optimiser):
         team_2 = team_2.drop('index', axis=1).reset_index()
         return team_2
 
-
     def pick_xi(self):
         other_players = self.first_xv.loc[self.first_xv['picked'] != 1]
         team = self.first_xv.loc[self.first_xv['picked'] == 1]
@@ -136,3 +148,5 @@ class DumbOptimiser(Optimiser):
 
         return team
 
+    def suggest_transfers(self, n_transfers):
+        pass
