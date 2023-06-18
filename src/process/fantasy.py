@@ -1,5 +1,5 @@
 import pandas as pd
-from src.scrape.fantasy.scrape import FPLScraper
+from scrape.fantasy.scrape import FPLScraper
 
 class FPLProcessor:
     def __init__(self, season, next_gameweek):

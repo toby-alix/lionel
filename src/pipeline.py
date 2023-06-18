@@ -1,7 +1,7 @@
-from src.process.fantasy import FPLProcessor
-from src.connect.db import PostgresConnector
-from src.scrape.bet.scrape import FutureBetScraper 
-from src.team.team import Team
+from process.fantasy import FPLProcessor
+from connect.db import PostgresConnector
+from scrape.bet.scrape import FutureBetScraper 
+from team.team import Team
 
 def run(season, next_gameweek):
     

@@ -1,4 +1,4 @@
-from src.scrape.bet.game import Game
+from scrape.bet.game import Game
 
 import numpy as np
 import datetime as dt

@@ -1,8 +1,8 @@
 from typing import Type
 import pandas as pd
 
-from src.connect.combine import BetFPLCombiner
-from src.team.select import DumbOptimiser
+from connect.combine import BetFPLCombiner
+from team.select import DumbOptimiser
 
 class Team:
 

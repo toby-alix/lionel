@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from src.connect.db import PostgresConnector
+from connect.db import PostgresConnector
 
 class BetFPLCombiner:
 
