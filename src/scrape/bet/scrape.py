@@ -17,6 +17,12 @@ class BetScraper(metaclass=ABCMeta):
     REGIONS = "uk"
     MARKETS="h2h"
     API_KEY = os.environ.get('API_KEY') or ENV_VARS['API_KEY']
+    NAME_MAP = {
+        'Manchester United': 'Manchester Utd', 'Tottenham Hotspur': 'Tottenham', "Nottingham Forest": "Nottingham",
+        'Brighton and Hove Albion': 'Brighton', 'Leicester City': 'Leicester',
+        'Leeds United': 'Leeds', 'Newcastle United': 'Newcastle', 'West Ham United': 'West Ham',
+        'Wolverhampton Wanderers': 'Wolves',
+    } 
 
     def __init__(self):
         self.games = []
@@ -47,7 +53,12 @@ class BetScraper(metaclass=ABCMeta):
         if len(self.games) == 0:
             raise Exception("Run the scrape first")
         else:
-            return pd.DataFrame.from_dict([game.to_dict() for game in self.games])        
+            # Rename here: This separates concerns between Game (which 
+            # is purely to do with the API connector) and the Team optimisation more
+            # generally
+            df = pd.DataFrame.from_dict([game.to_dict() for game in self.games])
+            df = df.replace({'home_team': BetScraper.NAME_MAP, 'away_team': BetScraper.NAME_MAP})
+            return df        
     
 
 class FutureBetScraper(BetScraper):
