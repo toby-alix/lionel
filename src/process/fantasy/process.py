@@ -1,7 +1,7 @@
 import pandas as pd
-from src.fantasy.scrape import Scraper
+from src.scrape.fantasy.scrape import FPLScraper
 
-class Processor:
+class FPLProcessor:
     def __init__(self, season, next_gameweek):
 
         # Inputs
@@ -9,7 +9,7 @@ class Processor:
         self.gameweek = next_gameweek
 
         # Scraper
-        self.scraper = Scraper(season)
+        self.scraper = FPLScraper(season)
         
         # Data
         self.fixtures = pd.DataFrame()

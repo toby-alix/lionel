@@ -1,9 +1,8 @@
 import pandas as pd
-import datetime as dt
  
 # TODO: Add consistent team naming conventions
 
-class Scraper:
+class FPLScraper:
  
     BASE_URL = "https://raw.githubusercontent.com/vaastav/Fantasy-Premier-League/master/data"
     SEASON_MAP = {23:"2022-23", 22: "2021-22", 21: "2020-21", 20: "2019-20", 19: "2018-19"}
@@ -17,7 +16,7 @@ class Scraper:
     @property
     def team_ids(self):
         if self._team_ids.empty:
-            team_ids = pd.read_csv(f"{Scraper.BASE_URL}/{Scraper.SEASON_MAP[self.season]}/teams.csv")
+            team_ids = pd.read_csv(f"{FPLScraper.BASE_URL}/{FPLScraper.SEASON_MAP[self.season]}/teams.csv")
             team_ids = team_ids.rename(columns={'name':'team', 'id': 'team_id'})
             team_ids = team_ids.replace({'team': {'Man City': 'Manchester City', 'Man Utd': 'Manchester Utd', 'Spurs': 'Tottenham', "Nott'm Forest": "Nottingham"}})
             self._team_ids = team_ids
@@ -47,7 +46,7 @@ class Scraper:
     @property
     def fixtures(self):
         if self._fixtures.empty:
-            fixtures = pd.read_csv(f"{Scraper.BASE_URL}/{Scraper.SEASON_MAP[self.season]}/fixtures.csv")
+            fixtures = pd.read_csv(f"{FPLScraper.BASE_URL}/{FPLScraper.SEASON_MAP[self.season]}/fixtures.csv")
             self._fixtures = self._format_fixtures(fixtures)
         return self._fixtures
 
@@ -56,8 +55,8 @@ class Scraper:
         self._fixtures=val
 
     def _get_gw_stats(self):
-        gw_stats_current = pd.read_csv(f"{Scraper.BASE_URL}/{Scraper.SEASON_MAP[self.season]}/gws/merged_gw.csv")
-        gw_stats_previous = pd.read_csv(f"{Scraper.BASE_URL}/{Scraper.SEASON_MAP[self.season-1]}/gws/merged_gw.csv")
+        gw_stats_current = pd.read_csv(f"{FPLScraper.BASE_URL}/{FPLScraper.SEASON_MAP[self.season]}/gws/merged_gw.csv")
+        gw_stats_previous = pd.read_csv(f"{FPLScraper.BASE_URL}/{FPLScraper.SEASON_MAP[self.season-1]}/gws/merged_gw.csv")
 
         gw_stats_current['season'] = self.season 
         gw_stats_previous['season'] = self.season-1
