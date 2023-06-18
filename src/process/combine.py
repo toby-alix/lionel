@@ -1,30 +1,29 @@
 import numpy as np
+import pandas as pd
 
-from src.process.fantasy.process import FPLProcessor
 from src.process.db.connector import PostgresConnector
 
-# Does this need to be a class? Could be simpler and make more sense as a set of funcs...
-# Especially as I'm only interested in a single public method
-class Processor:
+class BetFPLCombiner:
 
     def __init__(self, season, next_gameweek, odds_weight_def, odds_weight_fwd):
         self.season = season
         self.gameweek = next_gameweek
         self.odds_weight_def = odds_weight_def
         self.odds_weight_fwd = odds_weight_fwd
+        self.df_next_game = pd.DataFrame()
 
-        # TODO: Should all data just come, processed, from the database? It probably should. No reason to both
-        # scrape and pull from db...
-        self.fantasy_processor = FPLProcessor(self.season, self.gameweek)
-        self.connector = PostgresConnector()
+        # Dropped processor - this info now gets pulled from DB
+        # self.fantasy_processor = FPLProcessor(self.season, self.gameweek)  # This should be removed and pulled from DB
+        self.connector = PostgresConnector() 
 
     def prepare_next_gw(self): 
         df_odds = self.connector.get_win_odds(self.season, self.gameweek)  # Adjusted from gameweek+1 to gameweek
-        df_players = self.fantasy_processor.player_stats
+        df_players = self.connector.get_player_stats(self.season, self.gameweek)
 
         df_next_game = self._shape_home_away_fixtures(df_players, df_odds)
         df_next_game = self._shape_double_gameweeks(df_next_game)
         df_next_game = self._clean_next_game(df_next_game, self.gameweek)
+        self.df_next_game = df_next_game
         return df_next_game
 
     @staticmethod

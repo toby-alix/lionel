@@ -1,7 +1,7 @@
 from typing import Type
 import pandas as pd
 
-from src.process.combine import Processor
+from src.process.combine import BetFPLCombiner
 from src.team.select import Optimiser
 
 class Team:
@@ -11,13 +11,13 @@ class Team:
             season, 
             next_gameweek,  # adjusted from current_gameweek to next_gameweek
             df_next_game=pd.DataFrame(), 
-            initial_xi:Type['Team']=None, # Another team object as the previous team
+            initial_xi:Type['Team']=None, # The previous team for updates to be made to
             odds_weight_def=0.6, 
             odds_weight_fwd=0.4
         ): 
         self.season = season
         self.gameweek = next_gameweek
-        self.processor = Processor(season, next_gameweek, odds_weight_def, odds_weight_fwd) ## TODO: This should be a processor for both odds and FPL data combined
+        self.processor = BetFPLCombiner(season, next_gameweek, odds_weight_def, odds_weight_fwd) ## TODO: Team should pull from DB not straight from the scraper.
         self.selector = Optimiser
        
         self.df_next_game = df_next_game
@@ -47,7 +47,8 @@ class Team:
 
     def pick_xi(self):
         """Run picks"""
-        return self.selector.pick_xi()
+        self.first_xi = self.selector.pick_xi()
+        return self.first_xi
 
     def suggest_transfers(self):
         pass

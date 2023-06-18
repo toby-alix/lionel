@@ -13,7 +13,7 @@ class FPLProcessor:
         
         # Data
         self.fixtures = pd.DataFrame()
-        self.player_stats = pd.DataFrame()
+        self.player_stats = pd.DataFrame()  # This should be pushed to DB
         self.next_fixtures = pd.DataFrame()
         self.gameweek_dates = pd.DataFrame()
 

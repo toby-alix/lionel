@@ -6,7 +6,7 @@ pd.options.mode.chained_assignment = None  # default='warn'
 
 class Game:
     """
-    Takes a game dictionary and makes it usable
+    Parses a game from the API response
     """
 
     def __init__(self, game_dict: dict):
@@ -14,35 +14,75 @@ class Game:
         self.bookmakers = []
         self.raw_odds = pd.DataFrame()
         self.adjusted_odds = pd.DataFrame()
+        self.aggregated_odds = {} # TODO
         self.home_team = ''
         self.away_team = ''
         self.date = dt.date
-        self.aggregated_odds = {}
+        self.game_date = None
+
+    def __repr__(self):
+        return f"Game object: {self.home_team} v {self.away_team} on {self.game_date}"
         
-        self.run()
+    @property
+    def home_team(self):
+        if not self._home_team:
+            self._home_team = self.game_dict['home_team']
+        return self._home_team
+    
+    @home_team.setter
+    def home_team(self, val):
+        self._home_team = val
 
+    @property
+    def away_team(self):
+        if not self._away_team:
+            self._away_team = self.game_dict['away_team']
+        return self._away_team
+    
+    @away_team.setter
+    def away_team(self, val):
+        self._away_team = val
 
-    def get_teams(self, game: dict=None) -> dict:
-        
-        # Allow game to be passed for testing
-        if self.home_team != '':
-            pass
+    @property
+    def bookmakers(self):
+        if self._bookmakers == []:
+            self._bookmakers = self.game_dict['bookmakers']
+        return self._bookmakers
+    
+    @bookmakers.setter
+    def bookmakers(self, val):
+        self._bookmakers = val
 
-        else:
-            game = game or self.game_dict 
-        
-            self.home_team = game['home_team']
-            self.away_team = game['away_team']
+    @property
+    def game_date(self):
+        if self._game_date is None:
+            self._game_date = dt.datetime.strptime(self.game_dict['commence_time'],"%Y-%m-%dT%H:%M:%SZ").date()
+        return self._game_date
+    
+    @game_date.setter
+    def game_date(self, val):
+        self._game_date = val
 
-        return {'home_team': self.home_team, 'away_team': self.away_team}
+    @property
+    def raw_odds(self):
+        if self._raw_odds.empty:
+            formatted_bookies = [self._format_one_bookies_data(bookie, self.home_team, self.away_team) for bookie in self.bookmakers] 
+            self._raw_odds = pd.DataFrame.from_dict(formatted_bookies)
+        return self._raw_odds
 
+    @raw_odds.setter
+    def raw_odds(self, val):
+        self._raw_odds = val
 
-    def get_game_date(self, game: dict=None) -> dt.date:
-        game = game or self.game_dict 
-        date = dt.datetime.strptime(game['commence_time'],"%Y-%m-%dT%H:%M:%SZ").date()
-        self.date = date
-        return date
+    @property
+    def adjusted_odds(self):
+        if self._adjusted_odds.empty:
+            self._adjusted_odds = self.raw_odds.apply(lambda row: self._adjust_raw_game_odds_for_margin(row), axis=1)
+        return self._adjusted_odds
 
+    @adjusted_odds.setter
+    def adjusted_odds(self, val):
+        self._adjusted_odds = val
 
     @staticmethod
     def _get_odds_for_one_bookie(odds_list, home_team, away_team):
@@ -51,7 +91,6 @@ class Game:
         draw_odds = [1/d['price'] for d in odds_list if d['name'] == 'Draw'][0]
         return {'home_odds': home_odds, 'away_odds': away_odds, 'draw_odds': draw_odds}    
     
-
     def _format_one_bookies_data(self, bookie, home_team, away_team):
         name = bookie['key']
         update = bookie['last_update']
@@ -63,25 +102,6 @@ class Game:
         out.update(odds_dict)
         return out
 
-
-    def get_raw_odds(self, game: dict=None) -> pd.DataFrame:
-        game = game or self.game_dict
-        bookies_list = game['bookmakers']
-        teams = self.get_teams(game)
-
-        formatted_bookies = []
-        for bookie in bookies_list:
-            single_bookie_formatted = self._format_one_bookies_data(
-                bookie, home_team=teams['home_team'], 
-                away_team=teams['away_team']
-            )
-            formatted_bookies.append(single_bookie_formatted)
-            
-        df_raw_odds = pd.DataFrame.from_dict(formatted_bookies)
-        self.raw_odds = df_raw_odds
-        return df_raw_odds
-
-
     @staticmethod
     def _adjust_raw_game_odds_for_margin(raw_odds: pd.Series) -> pd.Series:
        
@@ -92,16 +112,20 @@ class Game:
         raw_odds['draw_odds'] = raw_odds['draw_odds']/total_odds
         return raw_odds
 
-
-    def adjust_raw_odds_df_for_margin(self, raw_odds_df: pd.DataFrame=None) -> pd.DataFrame:
-        raw_odds_df = raw_odds_df or self.raw_odds
-        adjusted_odds_df = raw_odds_df.apply(lambda row: self._adjust_raw_game_odds_for_margin(row), axis=1)
-        self.adjusted_odds = adjusted_odds_df
-        return self.adjusted_odds  
-
+    @property
+    def aggregated_odds(self):
+        if self._aggregated_odds == {}:
+            home_odds = np.mean(self.adjusted_odds['home_odds'])
+            away_odds = np.mean(self.adjusted_odds['away_odds'])
+            draw_odds = np.mean(self.adjusted_odds['draw_odds'])
+            self._aggregated_odds = {'home_odds': home_odds, 'away_odds': away_odds, 'draw_odds': draw_odds}
+        return self._aggregated_odds
     
-    def run(self):
-        self.get_teams()
-        self.get_game_date()
-        self.get_raw_odds()
-        self.adjust_raw_odds_df_for_margin()
+    @aggregated_odds.setter
+    def aggregated_odds(self, val):
+        self._aggregated_odds = val
+
+    def to_dict(self):
+        dict_ = {'home_team': self.home_team, 'away_team':self.away_team}
+        dict_.update(self.aggregated_odds)
+        return dict_

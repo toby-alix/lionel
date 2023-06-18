@@ -6,7 +6,6 @@ from abc import ABCMeta, abstractmethod
 
 # TODO: Create optimiser base class within sub-classes for first_xi and making transfers
 
-
 class Optimiser:
 
     POS_CONSTRAINTS = {
