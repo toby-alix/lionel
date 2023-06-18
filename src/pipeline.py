@@ -1,9 +1,7 @@
-import datetime as dt
-
 from src.process.fantasy import FPLProcessor
 from src.connect.db import PostgresConnector
 from src.scrape.bet.scrape import FutureBetScraper 
-
+from src.team.team import Team
 
 def run(season, next_gameweek):
     
@@ -21,7 +19,6 @@ def run(season, next_gameweek):
     con.add_new_win_odds(win_odds)
 
     # Update team choices and add them to DB
-    pass
-
-
-    
+    team = Team(season, next_gameweek)
+    xi = team.pick_xi()
+    xi.to_sql("TeamChoices1", con=con.engine, if_exists="append", index=False)
