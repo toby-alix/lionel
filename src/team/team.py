@@ -1,8 +1,8 @@
 from typing import Type
 import pandas as pd
 
-from src.process.combine import BetFPLCombiner
-from src.team.select import Optimiser
+from src.connect.combine import BetFPLCombiner
+from src.team.select import DumbOptimiser
 
 class Team:
 
@@ -14,7 +14,9 @@ class Team:
             initial_xi:Type['Team']=None, # The previous team for updates to be made to
             odds_weight_def=0.6, 
             odds_weight_fwd=0.4,
-            optimisation_obj=Optimiser, # 'Dumb' version available on this repo
+            optimisation_obj=DumbOptimiser,
+            budget=1000,
+            testing=False,
         ): 
         self.season = season
         self.gameweek = next_gameweek

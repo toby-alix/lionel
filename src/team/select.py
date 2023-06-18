@@ -4,9 +4,8 @@ import pandas as pd
 from pulp import LpVariable, LpProblem, lpSum, LpMaximize
 from abc import ABCMeta, abstractmethod
 
-# TODO: Create optimiser base class within sub-classes for first_xi and making transfers
 
-class Optimiser:
+class Optimiser(metaclass=ABCMeta):
 
     POS_CONSTRAINTS = {
         "XV": {
@@ -23,7 +22,7 @@ class Optimiser:
         }
     }
 
-    def __init__(self, player_df, season, budget=1000, testing=False, max_var="value_fixture"):
+    def __init__(self, player_df, season, budget, testing=False):
         self.player_df=player_df.fillna(0).reset_index()
         self.teams = self.player_df.team_name.to_list()
         self.positions = self.player_df.position.to_list()
@@ -33,10 +32,21 @@ class Optimiser:
 
         self.budget = budget
         self.testing = testing
-        self.max_var = max_var
 
         self.first_xv = pd.DataFrame()
         self.first_xi = pd.DataFrame()
+        
+    @abstractmethod
+    def pick_xi(self):
+        """Return df of all players with first_xi == 1 for those that are picked"""
+        pass
+
+
+class DumbOptimiser(Optimiser):
+   
+    def __init__(self, player_df, season, budget=1000, testing=False, max_var="value_fixture"):
+        Optimiser.__init__(self, player_df, season, budget, testing)
+        self.max_var = max_var
 
     @property
     def first_xv(self):
