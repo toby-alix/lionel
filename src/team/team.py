@@ -13,12 +13,13 @@ class Team:
             df_next_game=pd.DataFrame(), 
             initial_xi:Type['Team']=None, # The previous team for updates to be made to
             odds_weight_def=0.6, 
-            odds_weight_fwd=0.4
+            odds_weight_fwd=0.4,
+            optimisation_obj=Optimiser, # 'Dumb' version available on this repo
         ): 
         self.season = season
         self.gameweek = next_gameweek
         self.processor = BetFPLCombiner(season, next_gameweek, odds_weight_def, odds_weight_fwd) ## TODO: Team should pull from DB not straight from the scraper.
-        self.selector = Optimiser
+        self.selector = optimisation_obj
        
         self.df_next_game = df_next_game
         self.initial_xi = initial_xi  # Could be another object of the same class? That would be v. nice
@@ -37,6 +38,8 @@ class Team:
 
     @property
     def df_next_game(self):
+        """Collects next gameweek data from DB unless 
+        it was passed at instantiation"""
         if self._df_next_game.empty:
             self._df_next_game = self.processor.prepare_next_gw()
         return self._df_next_game

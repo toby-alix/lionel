@@ -12,8 +12,6 @@ class BetFPLCombiner:
         self.odds_weight_fwd = odds_weight_fwd
         self.df_next_game = pd.DataFrame()
 
-        # Dropped processor - this info now gets pulled from DB
-        # self.fantasy_processor = FPLProcessor(self.season, self.gameweek)  # This should be removed and pulled from DB
         self.connector = PostgresConnector() 
 
     def prepare_next_gw(self): 
@@ -67,10 +65,11 @@ class BetFPLCombiner:
         return pivot
 
     def _weight_points(self, df_next_game):
-        df_next_game['points_weighted'] = np.where(df_next_game.position.isin(['DEF', 'GK']), 
-                                        ((1-self.odds_weight_def) * df_next_game['scaled_points']) + (self.odds_weight_def * df_next_game['agg_win_odds']), 
-                                        ((1-self.odds_weight_fwd) * df_next_game['scaled_points']) + (self.odds_weight_fwd * df_next_game['agg_win_odds'])
-                                        )  
+        df_next_game['points_weighted'] = np.where(
+                df_next_game.position.isin(['DEF', 'GK']), 
+                ((1-self.odds_weight_def) * df_next_game['scaled_points']) + (self.odds_weight_def * df_next_game['agg_win_odds']), 
+                ((1-self.odds_weight_fwd) * df_next_game['scaled_points']) + (self.odds_weight_fwd * df_next_game['agg_win_odds'])
+            )  
         return df_next_game
 
     def _clean_next_game(self, df_next_game, next_gameweek):

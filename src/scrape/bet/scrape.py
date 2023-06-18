@@ -18,17 +18,14 @@ class BetScraper(metaclass=ABCMeta):
     MARKETS="h2h"
     API_KEY = os.environ.get('API_KEY') or ENV_VARS['API_KEY']
 
-    def __init__(
-        self,
-    ):
-
-        # API Endpoints
-        self.sports_endpoint=BetScraper.BASE_URL + f"?apiKey={BetScraper.API_KEY}"
+    def __init__(self):
         self.games = []
 
     @property
     @abstractmethod
     def odds_endpoint(self):
+        """Odds endpoint to be defined for each of future
+        and historical scrapes"""
         pass
     
     def _get_response(self, url) -> list:
@@ -46,14 +43,13 @@ class BetScraper(metaclass=ABCMeta):
         self.games.extend(games)
         return games
     
-    def games_to_df(self):
+    def to_df(self):
         if len(self.games) == 0:
             raise Exception("Run the scrape first")
-        
-        df = pd.DataFrame.from_dict([game.to_dict() for game in self.games])
-        return df        
+        else:
+            return pd.DataFrame.from_dict([game.to_dict() for game in self.games])        
     
-    
+
 class FutureBetScraper(BetScraper):
     def __init__(self):
         BetScraper.__init__(self)
