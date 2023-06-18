@@ -2,7 +2,6 @@ import pandas as pd
 from src.fantasy.scrape import Scraper
 
 class Processor:
-    # TODO: Adjust logic to use only next gameweek
     def __init__(self, season, next_gameweek):
 
         # Inputs

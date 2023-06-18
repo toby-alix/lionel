@@ -79,7 +79,7 @@ class Team:
         
         return df_collapsed_players
 
-
+    # 1) To be moved into a class that combines odds and fpl
     @staticmethod
     def _shape_home_away_fixtures(df_players, df_odds):
         next_home_df = df_players[df_players['is_home']]
@@ -95,7 +95,7 @@ class Team:
         df_next_game = next_home_df.append(next_away_df)
         return df_next_game
 
-
+    # 2) To be moved into a class that combines odds and fpl
     @staticmethod
     def _shape_double_gameweeks(df_next_game):
 
