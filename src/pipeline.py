@@ -1,7 +1,7 @@
 import datetime as dt
 
-from src.process.fantasy.process import FPLProcessor
-from src.process.db.connector import PostgresConnector
+from src.process.fantasy import FPLProcessor
+from src.connect.db import PostgresConnector
 from src.scrape.bet.scrape import FutureBetScraper 
 
 

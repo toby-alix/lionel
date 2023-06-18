@@ -1,7 +1,7 @@
 from typing import Type
 import pandas as pd
 
-from src.process.combine import BetFPLCombiner
+from src.connect.combine import BetFPLCombiner
 from src.team.select import Optimiser
 
 class Team:
@@ -64,7 +64,7 @@ class Team:
     @property
     def value(self):
         if self._value is None and not self.selected:
-            raise Exception("Team has not been selected")
+            raise Exception("Team has not been selected.")
         else:
             first_xi = self.first_xi[self.first_xi.picked == 1]
             value = int(first_xi.value.sum())
