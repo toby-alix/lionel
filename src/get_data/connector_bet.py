@@ -76,11 +76,15 @@ class BetAPIConnector():
 
 
     def get_future_response(self):
-        self._get_response(self.odds_endpoint)
+        if self.response_dict is None:
+            self._get_response(self.odds_endpoint)
+        return self.response_dict
 
 
     def get_hist_response(self):
-        self._get_response(self.historical_endpoint)
+        if self.response_dict is None:
+            self._get_response(self.historical_endpoint)
+        return self.response_dict
 
 
     def _get_response(self, url) -> list:
@@ -173,9 +177,11 @@ class BetAPIConnector():
 
 
     def run(self):
-        self.get_future_response()
+        
+        response_dict = self.get_future_response()
         games = []
-        for game in self.response_dict:
+
+        for game in response_dict:
 
             game_dict = {}
 

@@ -18,8 +18,8 @@ class Team:
         
         fixtures = self.scraper_fpl.get_season_fixtures()
 
-        fixtures_1 = self.fixtures.copy()[['home', 'away', 'game_date', 'gameweek']]
-        fixtures_2 = self.fixtures.copy()[['home', 'away', 'game_date', 'gameweek']]
+        fixtures_1 = fixtures[['home', 'away', 'game_date', 'gameweek']]
+        fixtures_2 = fixtures[['home', 'away', 'game_date', 'gameweek']]
         fixtures_1['is_home'] = True
         fixtures_2['is_home'] = False
         fixtures_1 = fixtures_1.rename({'home': 'team_name', 'away': 'next_opponent_name'}, axis=1)
@@ -136,10 +136,6 @@ class Team:
         # Combine FPL and betting data
         df_next_game = self._shape_home_away_fixtures(df_players, df_odds)
         df_next_game = self._shape_double_gameweeks(df_next_game)
-        
-        for col in ['is_home1', 'is_home2', 'is_home3']:
-            if col in df_next_game.columns:
-                df_next_game[col] = df_next_game[col].replace({0: np.nan, float(0): np.nan})
 
         # Cleaning
         df_next_game['games_played'] = df_next_game['minutes'] / 90
@@ -270,9 +266,22 @@ class Team:
         team['season'] = self.season
         team['picked_time'] = dt.datetime.now() 
 
+        for col in ['is_home1', 'is_home2', 'is_home3']:
+            if col in team.columns:
+                team[col] = team[col].replace({0: np.nan, float(0): np.nan})
+
         self.first_xi = team
-        
 
 
+class TeamPointsChecker:
+    def __init__(self, connector: PostgresConnector):
+        self.connector = connector
+
     
-    
+    def check_points(self, gameweek, season):
+        team = self.connector.get_team(gameweek, season)
+        team = team[team.first_xi == 1]
+        pass
+
+
+

@@ -16,7 +16,6 @@ class PostgresConnector:
     POSTGRES_PWD = os.environ.get('POSTGRES_PWD') or ENV_VARS['POSTGRES_PWD']
     POSTGRES_HOST = os.environ.get('POSTGRES_HOST') or ENV_VARS['POSTGRES_HOST']
     POSTGRES_DB = os.environ.get('POSTGRES_DB') or ENV_VARS['POSTGRES_DB']
-    POSTGRES_URI = os.environ.get('POSTGRES_DB') or ENV_VARS['POSTGRES_DB']
     SQLALCHEMY_DATABASE_URI = os.environ.get('SQLALCHEMY_DATABASE_URI') or ENV_VARS['SQLALCHEMY_DATABASE_URI']
 
 
@@ -33,22 +32,6 @@ class PostgresConnector:
             PostgresConnector.SQLALCHEMY_DATABASE_URI,
             echo=False,  # Prints all SQL queries -> True for debugging
         )
-
-
-
-    def _test_connection(self):
-        cur = self.conn.cursor()
-        print('PostgreSQL database version:')
-        cur.execute('SELECT version()')
-        db_version = cur.fetchone()
-        print(db_version)
-        cur.close()
-
-
-    def _example_deletion(self):
-        """For reference"""
-        with self.engine.begin() as con:
-            con.exectute('DROP TABLE "example_table"')
         
 
     def get_win_odds(self, season, gameweek):
