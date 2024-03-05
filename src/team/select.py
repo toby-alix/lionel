@@ -132,6 +132,7 @@ class DumbOptimiser(Optimiser):
         team_2 = team_2.drop("index", axis=1).reset_index()
         return team_2
 
+    # maybe make this
     def pick_xi(self):
         other_players = self.first_xv.loc[self.first_xv["picked"] != 1]
         team = self.first_xv.loc[self.first_xv["picked"] == 1]
@@ -172,3 +173,86 @@ class DumbOptimiser(Optimiser):
                 team[col] = team[col].replace({0: np.nan, float(0): np.nan})
 
         return team
+
+    # existing picking code
+    def update_xi(self, max_changes):
+        # how to give it the starting point of the previous team and ask it to make a single change?
+        players = [
+            LpVariable("player_" + str(i), cat="Binary") for i in self.player_df.index
+        ]
+        captain_decisions = [
+            LpVariable("captain_" + str(i), cat="Binary") for i in self.player_df.index
+        ]
+
+        changes = [
+            LpVariable("change_" + str(i), cat="Binary") for i in self.player_df.index
+        ]
+
+        prob = LpProblem("FPL Player Choices", LpMaximize)
+
+        prob += lpSum(
+            (players[i] + captain_decisions[i]) * self.points_weighted[i]
+            for i in range(len(self.player_df))
+        )
+        prob += sum(players) == 15
+        prob += (
+            lpSum(
+                players[i] * self.player_df.value[self.player_df.index[i]]
+                for i in range(len(self.player_df))
+            )
+            <= 1010
+        )
+
+        prob += sum(captain_decisions) == 1
+
+        for pos in ["GK", "DEF", "MID", "FWD"]:
+            prob += (
+                lpSum(
+                    players[i]
+                    for i in range(len(self.player_df))
+                    if self.positions[i] == pos
+                )
+                <= self.POS_CONSTRAINTS["XV"][pos]
+            )
+
+        for club in self.teams:
+            prob += (
+                lpSum(
+                    players[i]
+                    for i in range(len(self.player_df))
+                    if self.teams[i] == club
+                )
+                <= 3
+            )  # Club Limit
+
+        for i in range(len(self.player_df)):
+            prob += (players[i] - captain_decisions[i]) >= 0
+
+        # add constraint for the changes -> number of original players must be 15 - max_changes
+        prob += (
+            lpSum(
+                changes[i]
+                for i in range(len(self.player_df))
+                if self.player_df["initial_team"][i]
+            )
+        ) >= 15 - max_changes
+        prob.solve()
+
+        players = [player for player in players if player.varValue != 0]
+        captain = [player for player in captain_decisions if player.varValue != 0]
+        captain_index = int(captain[0].name.split("_")[1])
+
+        indices = [int(player.name.split("_")[1]) for player in players]
+
+        team_2 = self.player_df.copy(deep=True)
+        team_2.loc[indices, "picked"] = 1
+        team_2.loc[team_2["picked"] != 1, "picked"] = 0
+        team_2["captain"] = 0
+        team_2.loc[captain_index, "captain"] = 1
+
+        team_2 = team_2.drop("index", axis=1).reset_index()
+        self.first_xv = team_2
+        return self.pick_xi()
+
+        # add constraint for max changes - how to do this?
+        # could add a column

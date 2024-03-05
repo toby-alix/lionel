@@ -1,7 +1,16 @@
 from typing import Type
 import pandas as pd
+import numpy as np
 
 from team.select import DumbOptimiser
+
+
+""" 
+Steps to enable updating from an existing Team:
+1. Allow player ids to be passed in
+2. Get the data for those players from dataframe etc as normal
+3. Run optimisation with current players as a starting point
+"""
 
 
 class Team:
@@ -30,7 +39,7 @@ class Team:
         season,
         next_gameweek,  # adjusted from current_gameweek to next_gameweek
         df_next_game=pd.DataFrame(),
-        initial_xi: Type["Team"] = None,  # The previous team for updates to be made to
+        initial_xi=[],  # The previous team for updates to be made to
         odds_weight_def=0.6,
         odds_weight_fwd=0.4,
         optimisation_obj=DumbOptimiser,
@@ -56,13 +65,14 @@ class Team:
 
         self.season = season
         self.gameweek = next_gameweek
-        self.odds_weight_def = 0.6
-        self.odds_weight_fwd = 0.4
-
+        self.processor = None
+        self.odds_weight_def = odds_weight_def
+        self.odds_weight_fwd = odds_weight_fwd
         self.selector = optimisation_obj
 
         self.df_next_game = df_next_game
         self.initial_xi = initial_xi  # Could be another object of the same class? That would be v. nice
+        self.update_existing_team = len(initial_xi) > 0
         self.first_xi = pd.DataFrame()
         self.first_xv = pd.DataFrame()
 
@@ -84,7 +94,7 @@ class Team:
         if isinstance(self._selector, type):
             self._selector = self._selector(
                 self.df_next_game, self.season, budget=self.budget, testing=self.testing
-            )
+            )  # TODO: This will need to be updated to include the initial_xi if it exists
         return self._selector
 
     @selector.setter
@@ -99,6 +109,15 @@ class Team:
             raise Exception("No processor has been set and no data has been passed.")
         elif self._df_next_game.empty:
             self._df_next_game = self.processor.prepare_next_gw()
+
+        # Add initial team column if it's an update
+        if self.update_existing_team:
+            self._df_next_game["initial_team"] = self._df_next_game["element"].isin(
+                self.initial_xi
+            )
+        else:
+            self._df_next_game["initial_team"] = np.nan
+
         return self._df_next_game
 
     @df_next_game.setter
@@ -129,27 +148,14 @@ class Team:
     def value(self, val):
         self._value = val
 
-    @property
-    def budget(self):
-        return self._budget
-
-    @budget.setter
-    def budget(self, val):
-        if self.initial_xi is None:
-            self._budget = val
-        else:
-            remaining = self._get_deficit_budget()
-            budget = self.initial_xi.value
-            self._budget = budget
-
-    def _get_deficit_budget(self):
-        """Get budget after adjustments for penalties"""
-        pass
-
-    def pick_xi(self):
+    def pick_xi(self, max_changes=None):
         """Run picks"""
-        self.first_xi = self.selector.pick_xi()
-        self.selected = True
+        if not self.update_existing_team:
+            self.first_xi = self.selector.pick_xi()
+            self.selected = True
+        else:
+            # TODO
+            self.first_xi = self.selector.update_xi(max_changes)
         return self.first_xi
 
     def suggest_transfers(self):
