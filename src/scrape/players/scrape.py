@@ -1,7 +1,5 @@
 import pandas as pd
 
-# TODO: Add consistent team naming conventions
-
 
 class FPLScraper:
 

@@ -1,5 +1,5 @@
 import pandas as pd
-from scrape.fantasy.scrape import FPLScraper
+from scrape.players.scrape import FPLScraper
 
 
 class FPLProcessor:

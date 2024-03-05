@@ -1,7 +1,6 @@
 from typing import Type
 import pandas as pd
 
-from scrape.combine import BetFPLCombiner
 from team.select import DumbOptimiser
 
 
