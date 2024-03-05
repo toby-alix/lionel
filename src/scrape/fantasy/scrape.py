@@ -163,9 +163,13 @@ class FPLScraper:
     @property
     def gw_stats(self):
         if self._gw_stats.empty:
-            self._gw_stats = self._get_gw_stats()
+            raise Exception("Run the scrape first")
         return self._gw_stats
 
     @gw_stats.setter
     def gw_stats(self, val):
         self._gw_stats = val
+
+    def run_scrape(self):
+        self.gw_stats = self._get_gw_stats()
+        return self.gw_stats

@@ -8,12 +8,12 @@ class BetFPLCombiner:
 
     def __init__(
         self,
-        season,
         next_gameweek,
-        odds_weight_def,
-        odds_weight_fwd,
-        df_odds,
+        df_odds,  # adjusted these to be passed instead of collected from DB
         df_players,
+        season=24,
+        odds_weight_def=0.6,
+        odds_weight_fwd=0.4,
     ):
         self.season = season
         self.gameweek = next_gameweek
@@ -22,36 +22,6 @@ class BetFPLCombiner:
         self.df_next_game = pd.DataFrame()
         self.df_odds = df_odds
         self.df_players = df_players
-
-        # self.connector = PostgresConnector()
-
-    @property
-    def df_odds(self):
-        return self._df_odds
-
-    @df_odds.setter
-    def df_odds(self, val):
-        if val is None:
-            self._df_odds = val
-            # TODO
-            # self._df_odds = self.connector.get_win_odds(self.season, self.gameweek)
-        else:
-            self._df_odds = val
-
-    @property
-    def df_players(self):
-        return self._df_players
-
-    @df_players.setter
-    def df_players(self, val):
-        if val is None:
-            self._df_players = val
-            # TODO
-            # self._df_players = self.connector.get_player_stats(
-            #     self.season, self.gameweek
-            # )
-        else:
-            self._df_players = val
 
     def prepare_next_gw(self):
         df_next_game = self._shape_home_away_fixtures(self.df_players, self.df_odds)
@@ -63,12 +33,11 @@ class BetFPLCombiner:
     @staticmethod
     def _shape_home_away_fixtures(df_players, df_odds):
         next_home_df = df_players[df_players["is_home"]]
-        next_away_df = df_players[df_players["is_home"] is False]
+        next_away_df = df_players[~df_players["is_home"]]
 
-        df_odds[["home", "away"]] = df_odds[["home_team", "away_team"]].apply(
+        df_odds[["home", "away"]] = df_odds[["home", "away"]].apply(
             lambda x: x.str.strip(), axis=0
         )
-        df_odds.drop(["home_team", "away_team"], axis=1, inplace=True)
 
         if df_odds["season"].dtype != "int64":
             df_odds["season"] = df_odds["season"].str.slice(start=-2).astype(int)
@@ -99,6 +68,8 @@ class BetFPLCombiner:
             "ict_index",
             "minutes",
             "position",
+        ]
+        COLS_2 = COLS + [
             "is_home",
             "home_odds",
             "draw_odds",
@@ -106,40 +77,11 @@ class BetFPLCombiner:
             "home",
             "away",
         ]
-        pivot = df_next_game[COLS]
+        pivot = df_next_game[COLS_2]
 
         # Account for gameweeks with two games
-        g = (
-            pivot.groupby(
-                [
-                    "name",
-                    "team_name",
-                    "total_points",
-                    "value",
-                    "ict_index",
-                    "minutes",
-                    "position",
-                ]
-            )
-            .cumcount()
-            .add(1)
-        )
-        pivot = (
-            pivot.set_index(
-                [
-                    "name",
-                    "team_name",
-                    "total_points",
-                    "value",
-                    "ict_index",
-                    "minutes",
-                    "position",
-                    g,
-                ]
-            )
-            .unstack()
-            .sort_index(axis=1, level=1)
-        )
+        g = pivot.groupby(COLS).cumcount().add(1)
+        pivot = pivot.set_index(COLS + [g]).unstack().sort_index(axis=1, level=1)
         pivot.columns = ["{}{}".format(a, b) for a, b in pivot.columns]
         pivot = pivot.reset_index()
         pivot["win_odds1"] = np.where(

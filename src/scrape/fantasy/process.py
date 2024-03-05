@@ -11,6 +11,7 @@ class FPLProcessor:
 
         # Scraper
         self.scraper = FPLScraper(season)
+        self.scraper.run_scrape()
 
         # Data
         self.fixtures = pd.DataFrame()
@@ -96,7 +97,7 @@ class FPLProcessor:
         gw_stats_collapsed = gw_stats_collapsed.rename(columns={"team_name": "team"})
         players = gw_stats_collapsed.merge(
             fixtures_gw, left_on="team", right_on="team_name", how="left"
-        )  # TODO: Can fixtures have team_name changed sooner?
+        )
         players = players.drop("team_name", axis=1)
 
         players = players.dropna()
