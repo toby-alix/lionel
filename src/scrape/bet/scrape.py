@@ -10,19 +10,25 @@ from abc import ABCMeta, abstractmethod
 
 ENV_VARS = dotenv_values()
 
+
 class BetScraper(metaclass=ABCMeta):
 
-    BASE_URL = f"https://api.the-odds-api.com//v4/sports/"
+    BASE_URL = "https://api.the-odds-api.com//v4/sports/"
     SPORT = "soccer_epl"
     REGIONS = "uk"
-    MARKETS="h2h"
-    API_KEY = os.environ.get('API_KEY') or ENV_VARS['API_KEY']
+    MARKETS = "h2h"
+    API_KEY = os.environ.get("API_KEY") or ENV_VARS["API_KEY"]
     NAME_MAP = {
-        'Manchester United': 'Manchester Utd', 'Tottenham Hotspur': 'Tottenham', "Nottingham Forest": "Nottingham",
-        'Brighton and Hove Albion': 'Brighton', 'Leicester City': 'Leicester',
-        'Leeds United': 'Leeds', 'Newcastle United': 'Newcastle', 'West Ham United': 'West Ham',
-        'Wolverhampton Wanderers': 'Wolves',
-    } 
+        "Manchester United": "Manchester Utd",
+        "Tottenham Hotspur": "Tottenham",
+        "Nottingham Forest": "Nottingham",
+        "Brighton and Hove Albion": "Brighton",
+        "Leicester City": "Leicester",
+        "Leeds United": "Leeds",
+        "Newcastle United": "Newcastle",
+        "West Ham United": "West Ham",
+        "Wolverhampton Wanderers": "Wolves",
+    }
 
     def __init__(self):
         self.games = []
@@ -33,7 +39,7 @@ class BetScraper(metaclass=ABCMeta):
         """Odds endpoint to be defined for each of future
         and historical scrapes"""
         pass
-    
+
     def _get_response(self, url) -> list:
         try:
             r = requests.get(url)
@@ -48,18 +54,20 @@ class BetScraper(metaclass=ABCMeta):
         games = [Game(game_dict) for game_dict in response_dict]
         self.games.extend(games)
         return games
-    
+
     def to_df(self):
         if len(self.games) == 0:
             raise Exception("Run the scrape first")
         else:
-            # Rename here: This separates concerns between Game (which 
+            # Rename here: This separates concerns between Game (which
             # is purely to do with the API connector) and the Team optimisation more
             # generally
             df = pd.DataFrame.from_dict([game.to_dict() for game in self.games])
-            df = df.replace({'home_team': BetScraper.NAME_MAP, 'away_team': BetScraper.NAME_MAP})
-            return df        
-    
+            df = df.replace(
+                {"home_team": BetScraper.NAME_MAP, "away_team": BetScraper.NAME_MAP}
+            )
+            return df
+
 
 class FutureBetScraper(BetScraper):
     def __init__(self):
@@ -72,13 +80,13 @@ class FutureBetScraper(BetScraper):
             + f"{BetScraper.SPORT}/odds/?apiKey={BetScraper.API_KEY}&"
             f"regions={BetScraper.REGIONS}&markets={BetScraper.MARKETS}"
         )
-    
+
 
 class HistoricalBetScraper(BetScraper):
     def __init__(self, date):
         BetScraper.__init__(self)
         self.date = date
-        
+
     @property
     def date(self):
         return self._date
@@ -94,8 +102,6 @@ class HistoricalBetScraper(BetScraper):
     @property
     def odds_endpoint(self):
         return (
-            BetScraper.BASE_URL 
-            + f"{BetScraper.SPORT}/odds-history/?apiKey="
+            BetScraper.BASE_URL + f"{BetScraper.SPORT}/odds-history/?apiKey="
             f"{BetScraper.API_KEY}&regions={BetScraper.REGIONS}&markets={BetScraper.MARKETS}&date={self.date}"
         )
-    
