@@ -22,5 +22,5 @@ def run(season, next_gameweek):
 
     # Update team choices
     team = Team(season, next_gameweek, df_next_game)
-    xi = team.pick_xi()
-    return xi
+    team.pick_xi()
+    return team

@@ -2,6 +2,7 @@ import pandas as pd
 from scrape.players.scrape import FPLScraper
 
 
+# TODO: This shouldn't be a class really, just a function
 class FPLProcessor:
     def __init__(self, season, next_gameweek):
 
@@ -81,6 +82,7 @@ class FPLProcessor:
                 "minutes": "sum",
                 "position": "last",
                 "team_id": "last",
+                "element": "last",
             }
         )
 

@@ -62,6 +62,7 @@ class BetFPLCombiner:
 
         COLS = [
             "name",
+            "element",
             "team_name",
             "total_points",
             "value",
