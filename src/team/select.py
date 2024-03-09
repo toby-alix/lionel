@@ -8,7 +8,6 @@ from abc import abstractmethod, ABC
 class BaseSelector(ABC):
 
     def __init__(self, player_df, season):
-        # TODO: Moving this from xv might cause some issues? I.e. if index column is required at some point
         self.player_df = player_df.fillna(0).reset_index(drop=True)
         self.season = season
         self.first_xi = pd.DataFrame()
@@ -125,10 +124,10 @@ class XISelector(BaseSelector):
         return team
 
 
-class XVSelector(BaseSelector, ABC):
+class NewXVSelector(BaseSelector):
     """
-    Abstract base class for selecting a team of 15 players. Inherited by NewXVSelector and UpdateXVSelector, which
-    are used to select a team for the first time and update an existing team, respectively.
+    Base class for selecting a team of 15 players. UpdateXVSelector, which
+    is used to update an existing team.
     """
 
     # Want to be able to access these objects without instantiating the class
@@ -143,8 +142,8 @@ class XVSelector(BaseSelector, ABC):
     def __init__(
         self,
         player_df,
-        season,
-        budget,
+        season=24,
+        budget=1000,
     ):
         super().__init__(player_df, season)
         self.budget = budget
@@ -172,7 +171,9 @@ class XVSelector(BaseSelector, ABC):
     @property
     def xi_selector(self):
         if self._xi_selector is None:
-            self._xi_selector = XVSelector.XI_SELECTOR_OBJ(self.first_xv, self.season)
+            self._xi_selector = NewXVSelector.XI_SELECTOR_OBJ(
+                self.first_xv, self.season
+            )
         return self._xi_selector
 
     @xi_selector.setter
@@ -251,7 +252,7 @@ class XVSelector(BaseSelector, ABC):
         self.first_xv = team
         return self.first_xv
 
-    def _initialise_xv_prob(self):
+    def initialise_xv_prob(self):
         prob = LpProblem("FPL Player Choices", LpMaximize)
         prob += lpSum(
             (self.players[i] + self.captains[i]) * self.player_df["points_weighted"][i]
@@ -260,10 +261,6 @@ class XVSelector(BaseSelector, ABC):
         prob = self._add_xv_constraints(prob)
         return prob
 
-    @abstractmethod
-    def initialise_xv_prob(self):
-        pass
-
     def pick_xv(self, *args, **kwargs):
         prob = self.initialise_xv_prob(*args, **kwargs)
         prob.solve()
@@ -271,15 +268,7 @@ class XVSelector(BaseSelector, ABC):
         return team
 
 
-class NewXVSelector(XVSelector):
-    def __init__(self, player_df, season, budget=1000):
-        super().__init__(player_df, season, budget)
-
-    def initialise_xv_prob(self):
-        return super()._initialise_xv_prob()
-
-
-class UpdateXVSelector(XVSelector):
+class UpdateXVSelector(NewXVSelector):
     # TODO: Add budget change logic
     def __init__(self, player_df, season, initial_xi, budget=1500):
         self.inital_xi_added = False
@@ -312,7 +301,8 @@ class UpdateXVSelector(XVSelector):
         return prob
 
     def initialise_xv_prob(self, max_changes=1):
-        prob = super()._initialise_xv_prob()
+        # add to method from parent class
+        prob = super().initialise_xv_prob()
         prob = self._add_changes_constraint(prob, max_changes)
         return prob
 
