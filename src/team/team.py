@@ -2,7 +2,7 @@ from typing import Type
 import pandas as pd
 import numpy as np
 
-from team.select import DumbOptimiser
+from team.select import NewXVSelector, UpdateXVSelector
 
 
 """ 
@@ -42,7 +42,6 @@ class Team:
         initial_xi=[],  # The previous team for updates to be made to
         odds_weight_def=0.6,
         odds_weight_fwd=0.4,
-        optimisation_obj=DumbOptimiser,
         budget=1000,
         testing=False,
         processor=None,
@@ -68,7 +67,6 @@ class Team:
         self.processor = None
         self.odds_weight_def = odds_weight_def
         self.odds_weight_fwd = odds_weight_fwd
-        self.selector = optimisation_obj
 
         self.df_next_game = df_next_game
         self.initial_xi = initial_xi  # Could be another object of the same class? That would be v. nice
@@ -82,6 +80,8 @@ class Team:
 
         self.selected = False
         self.testing = testing
+        self.selector_obj = None
+        self.selector = None
 
     def __repr__(self):
         return (
@@ -90,11 +90,28 @@ class Team:
         )
 
     @property
+    def selector_obj(self):
+        if self._selector_obj is None and self.update_existing_team:
+            self._selector_obj = UpdateXVSelector
+        elif self._selector_obj is None and not self.update_existing_team:
+            self._selector_obj = NewXVSelector
+        return self._selector_obj
+
+    @selector_obj.setter
+    def selector_obj(self, val):
+        self._selector_obj = val
+
+    @property
     def selector(self):
-        if isinstance(self._selector, type):
-            self._selector = self._selector(
-                self.df_next_game, self.season, budget=self.budget, testing=self.testing
-            )  # TODO: This will need to be updated to include the initial_xi if it exists
+        if self._selector is None:
+            kwargs = {
+                "player_df": self.df_next_game,
+                "season": self.season,
+                "budget": self.budget,
+            }
+            if self.update_existing_team:
+                kwargs["initial_xi"] = self.initial_xi
+            self._selector = self.selector_obj(**kwargs)
         return self._selector
 
     @selector.setter
@@ -109,14 +126,6 @@ class Team:
             raise Exception("No processor has been set and no data has been passed.")
         elif self._df_next_game.empty:
             self._df_next_game = self.processor.prepare_next_gw()
-
-        # Add initial team column if it's an update
-        if self.update_existing_team:
-            self._df_next_game["initial_team"] = self._df_next_game["element"].isin(
-                self.initial_xi
-            )
-        else:
-            self._df_next_game["initial_team"] = np.nan
 
         return self._df_next_game
 
@@ -148,18 +157,14 @@ class Team:
     def value(self, val):
         self._value = val
 
+    def _pick_xv(self, max_changes):
+        pass
+
     def pick_xi(self, max_changes=None):
         """Run picks"""
-        if not self.update_existing_team:
-            self.first_xi = self.selector.pick_xi()
-            self.selected = True
-        else:
-            # TODO
-            self.first_xi = self.selector.update_xi(max_changes)
+        if self.update_existing_team:
+            assert max_changes is not None
+        self.selector.pick_xv(max_changes)
+        self.first_xi = self.selector.pick_xi()
+        self.selected = True
         return self.first_xi
-
-    def suggest_transfers(self):
-        pass
-
-    def suggest_specific_transfer(self):
-        pass

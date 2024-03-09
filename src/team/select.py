@@ -126,8 +126,8 @@ class XISelector(BaseSelector):
 
 class NewXVSelector(BaseSelector):
     """
-    Base class for selecting a team of 15 players. UpdateXVSelector, which
-    is used to update an existing team.
+    Base class for selecting a team of 15 players. Inherited by UpdateXVSelector,
+    which is used to update an existing team.
     """
 
     # Want to be able to access these objects without instantiating the class
@@ -252,7 +252,7 @@ class NewXVSelector(BaseSelector):
         self.first_xv = team
         return self.first_xv
 
-    def initialise_xv_prob(self):
+    def initialise_xv_prob(self, *args, **kwargs):
         prob = LpProblem("FPL Player Choices", LpMaximize)
         prob += lpSum(
             (self.players[i] + self.captains[i]) * self.player_df["points_weighted"][i]
@@ -279,7 +279,7 @@ class UpdateXVSelector(NewXVSelector):
     def player_df(self):
         # add initial team to player_df if not already
         if not self.inital_xi_added:
-            self._player_df["initial_team"] = self._player_df["element"].isin(
+            self._player_df["initial_xi"] = self._player_df["element"].isin(
                 self.initial_xi
             )
             self.inital_xi_added = True
@@ -294,7 +294,7 @@ class UpdateXVSelector(NewXVSelector):
             lpSum(
                 self.players[i]
                 for i in range(len(self.player_df))
-                if not self.player_df["initial_team"][i]
+                if not self.player_df["initial_xi"][i]
             )
             <= max_changes
         )
