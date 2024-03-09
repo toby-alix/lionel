@@ -201,15 +201,18 @@ class XVSelector(BaseSelector, ABC):
             )
         return prob
 
-    # TODO: Does this work for the update?
-    def _add_xv_constraints(self, prob):
-        prob += sum(self.players) == 15  # can't believe i missed these lol
-        prob = self._add_budget_constraints(prob)
-        prob += sum(self.captains) == 1  # can't believe i missed these lol
-        prob = self._add_position_constraints(prob, self.players, self.player_df, "XV")
-        prob = self._add_club_constraints(prob)
+    def _add_captain_constraints(self, prob):
         for i in range(len(self.player_df)):
             prob += (self.players[i] - self.captains[i]) >= 0
+        return prob
+
+    def _add_xv_constraints(self, prob):
+        prob += sum(self.players) == 15
+        prob = self._add_budget_constraints(prob)
+        prob += sum(self.captains) == 1
+        prob = self._add_position_constraints(prob, self.players, self.player_df)
+        prob = self._add_club_constraints(prob)
+        prob = self._add_captain_constraints(prob)
         return prob
 
     @staticmethod
@@ -218,10 +221,9 @@ class XVSelector(BaseSelector, ABC):
         captain_index = int(captain[0].name.split("_")[1])
         return captain_index
 
-    def _add_position_constraints(self, prob, players, df, xi_xv="XV"):
+    def _add_position_constraints(self, prob, players, df):
         positions = df.position.to_list()
         for pos in ["GK", "DEF", "MID", "FWD"]:
-            # add upper bound for position (for XV this is effectively an equality bound)
             prob += (
                 lpSum(players[i] for i in range(len(df)) if positions[i] == pos)
                 <= self.POS_CONSTRAINTS[pos]
@@ -234,19 +236,7 @@ class XVSelector(BaseSelector, ABC):
         team_2.loc[team_2["picked"] != 1, "picked"] = 0
         team_2["captain"] = 0
         team_2.loc[captain_index, "captain"] = 1
-        # team_2 = team_2.drop("index", axis=1).reset_index()
         return team_2
-
-    def _initialise_xv_prob(self):
-        prob = LpProblem("FPL Player Choices", LpMaximize)
-        # this is the maximisation part of the objective
-        # this means set players and captains to 1 in order to max points_weighted
-        prob += lpSum(
-            (self.players[i] + self.captains[i]) * self.player_df["points_weighted"][i]
-            for i in range(len(self.player_df))
-        )
-        prob = self._add_xv_constraints(prob)
-        return prob
 
     def pick_xi(self):
         self.pick_xv()
@@ -261,26 +251,32 @@ class XVSelector(BaseSelector, ABC):
         self.first_xv = team
         return self.first_xv
 
-    def _pick_xv(self, update=False, **kwargs):
-        prob = self._initialise_xv_prob()
-        if update:
-            # TODO: Defined in UpdateXVSelector -> seems like a bad way to do this
-            prob = self._add_changes_constraint(prob, **kwargs)
+    def _initialise_xv_prob(self):
+        prob = LpProblem("FPL Player Choices", LpMaximize)
+        prob += lpSum(
+            (self.players[i] + self.captains[i]) * self.player_df["points_weighted"][i]
+            for i in range(len(self.player_df))
+        )
+        prob = self._add_xv_constraints(prob)
+        return prob
+
+    @abstractmethod
+    def initialise_xv_prob(self):
+        pass
+
+    def pick_xv(self, *args, **kwargs):
+        prob = self.initialise_xv_prob(*args, **kwargs)
         prob.solve()
         team = self._finalise_xv()
         return team
-
-    @abstractmethod
-    def pick_xv(self):
-        pass
 
 
 class NewXVSelector(XVSelector):
     def __init__(self, player_df, season, budget=1000):
         super().__init__(player_df, season, budget)
 
-    def pick_xv(self):
-        return super()._pick_xv(update=False)
+    def initialise_xv_prob(self):
+        return super()._initialise_xv_prob()
 
 
 class UpdateXVSelector(XVSelector):
@@ -315,11 +311,11 @@ class UpdateXVSelector(XVSelector):
         )
         return prob
 
-    def pick_xv(self, max_changes=1):
-        return super()._pick_xv(update=True, max_changes=max_changes)
+    def initialise_xv_prob(self, max_changes=1):
+        prob = super()._initialise_xv_prob()
+        prob = self._add_changes_constraint(prob, max_changes)
+        return prob
 
-
-#
 
 if __name__ == "__main__":
     import sys
